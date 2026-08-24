@@ -1,0 +1,32 @@
+name: Remove Chat Button
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  remove-chat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove chat navigation and chat page
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          import re
+          s=re.sub(r'<button onclick="showPage\(\'chat\',this\)"[^>]*>.*?</button>', '', s, flags=re.S)
+          s=re.sub(r'<section id="chat".*?</section>', '', s, flags=re.S)
+          s=re.sub(r'\s*function sendChatMessage\(\)\{.*?\n\s*\}', '', s, flags=re.S)
+          s=re.sub(r'\s*const input=document\.getElementById\("chatInput"\);\s*\n\s*if\(input\)\{.*?\n\s*\}\s*\n\s*\}\);', '', s, flags=re.S)
+          s=s.replace('grid-template-columns:repeat(5,1fr)', 'grid-template-columns:repeat(5,1fr)')
+          p.write_text(s,encoding='utf-8')
+      - name: Commit changes if needed
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet || git commit -m "Remove chat button"
+          git push
