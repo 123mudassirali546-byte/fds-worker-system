@@ -34,6 +34,9 @@ nav{position:fixed;z-index:20;bottom:12px;left:50%;transform:translateX(-50%);wi
 
 <section id="login" class="page"><div class="section-title"><h2>Worker Login</h2><span>Card Verified</span></div><div class="hero"><div class="eyebrow">CARD-BASED LOGIN</div><h1>Login With<br>Worker Card</h1><p>Registered worker apne card ka QR scan kare aur system ID match kare.</p><div class="scanbox"><div id="loginReader"></div><div class="actions"><button class="btn gold" onclick="startLoginScanner()">Scan My Card</button><button class="btn dark" onclick="stopLoginScanner()">Stop</button></div><div id="loginStatus" class="status">Scan My Card dabao.</div></div></div><div id="loginResult"></div></section>
 
+<!-- __FDS_OWNER_SYSTEM_V1__ -->
+<section id="owner" class="page">
+<div class="hero"><div class="eyebrow">OWNER CONTROL CENTER</div><h1>Owner<br>Dashboard</h1><p>Owner card <b>FDS999</b> verified. Yahan se store workers aur app controls manage kiye ja sakte hain.</p><div class="scanbox"><button class="btn gold" style="width:100%" onclick="showPage('workers',document.querySelectorAll('nav button')[1])">👥 Manage Workers</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="showPage('ai',document.querySelectorAll('nav button')[2])">📷 Add Worker</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="ownerLogout()">🔒 Logout Owner</button></div></div></section>
 <section id="about" class="page"><div class="about"><div class="about-top">FDS</div><div class="about-body"><div style="font-size:10px;letter-spacing:3px;color:#d9b955">PREMIUM DIGITAL EXPERIENCE</div><h2>FDS Worker System</h2><p>Fast • Elegant • Mobile First • QR Verified</p><div class="owner"><b>Shop Owner</b><span>Tufail Khan &nbsp;•&nbsp; Numair Khan</span></div><div class="dev">Created by <strong>Mudassir Ali</strong><br><small>Full Stack Developer</small></div></div></div></section>
 </div>
 
@@ -42,6 +45,7 @@ nav{position:fixed;z-index:20;bottom:12px;left:50%;transform:translateX(-50%);wi
 
 <script>
 const seed=[
+{name:"Mudassir Ali",role:"Owner",id:"FDS999",phone:"03705232727",rack:"1",photo:"",cardImage:"owner_card_front.png",cardBack:"owner_card_back.png",owner:true},
 {name:'Mudassir Ali',role:'Owner',id:'FDS999',phone:'03705232727',rack:'1',photo:'',cardImage:'owner_card_front.png',cardBack:'owner_card_back.png',owner:true},
 {name:'Faizan Khan',role:'Store Associate',id:'FDS99902',phone:'+92 340 1569207',rack:'2',photo:'',cardImage:'',cardBack:''},
 {name:'Awais Shekh',role:'Store Associate',id:'FDS99903',phone:'+92 333 5709644',rack:'4',photo:'',cardImage:'',cardBack:''}
