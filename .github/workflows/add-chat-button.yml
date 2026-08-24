@@ -1,0 +1,35 @@
+name: Add Chat Button
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  add-chat:
+    if: !contains(github.event.head_commit.message, 'Auto-add Chat button')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Chat button if missing
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'href="chat.html"' not in s:
+              old='<nav><button data-page="scan" class="active">'
+              new='<nav><a href="chat.html" style="text-decoration:none;color:inherit;display:grid;place-items:center;border:0;background:transparent;border-radius:15px;font-size:10px"><span style="font-size:20px;line-height:24px;display:block">💬</span>Chat</a><button data-page="scan" class="active">'
+              if old not in s:
+                  raise SystemExit('Navigation marker not found; existing design left untouched.')
+              p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+      - name: Commit change
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Auto-add Chat button'
+          git push
