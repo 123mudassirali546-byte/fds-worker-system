@@ -1,0 +1,41 @@
+name: Add owner card system
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  update-owner-system:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch owner system
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='__FDS_OWNER_SYSTEM_V1__'
+          if marker in s:
+              print('Owner system already patched.')
+              raise SystemExit(0)
+          owner='''{name:"Mudassir Ali",role:"Owner",id:"FDS999",phone:"03705232727",rack:"1",photo:"",cardImage:"owner_card_front.png",cardBack:"owner_card_back.png",owner:true},'''
+          s=s.replace('const seed=[', 'const seed=[\n'+owner, 1)
+          s=s.replace("document.getElementById('workerCount').textContent=workers.length+' worker'+(workers.length===1?'':'s');document.getElementById('workerList').innerHTML=workers.map", "const visibleWorkers=workers.filter(w=>!w.owner);document.getElementById('workerCount').textContent=visibleWorkers.length+' worker'+(visibleWorkers.length===1?'':'s');document.getElementById('workerList').innerHTML=visibleWorkers.map", 1)
+          s=s.replace("function showCard(id){\n let w=workers.find", "function normalizeCardCode(value){let v=String(value||'').trim();try{if(/^https?:\\/\\//i.test(v)){v=new URL(v).pathname.split('/').filter(Boolean).pop()||v}}catch(e){}return decodeURIComponent(v).trim().toUpperCase()}\nfunction showOwnerDashboard(){const w=workers.find(x=>x.owner||x.id.toUpperCase()==='FDS999');if(!w)return;localStorage.setItem('fds_owner_logged','1');document.getElementById('cardResult').innerHTML=`<div class=\"card\"><div class=\"card-inner\"><div class=\"card-top\"><div class=\"mini-logo\">FAMILY DOLLAR STORE</div><div class=\"pill\">OWNER • VERIFIED</div></div><div class=\"name\" style=\"margin-top:18px\">Welcome, ${esc(w.name)}</div><div class=\"role\">FULL OWNER ACCESS</div><div class=\"id\">Owner ID: ${esc(w.id)}</div><div style=\"color:#777;font-size:11px;margin-top:7px\">Phone: ${esc(w.phone)}</div><div style=\"color:#777;font-size:11px;margin-top:5px\">Rack No: ${esc(w.rack)}</div><div style=\"margin-top:16px;display:grid;gap:9px\"><button class=\"btn gold\" onclick=\"showPage('workers',document.querySelectorAll('nav button')[1])\">👥 Manage Workers</button><button class=\"btn dark\" onclick=\"showPage('ai',document.querySelectorAll('nav button')[2])\">📷 Add Worker Card</button><button class=\"btn dark\" onclick=\"ownerLogout()\">🔒 Owner Logout</button></div></div></div>`;toast('Owner verified: '+w.id)}\nfunction ownerLogout(){localStorage.removeItem('fds_owner_logged');document.getElementById('cardResult').innerHTML='';toast('Owner logged out')}\nfunction showCard(id){\n const code=normalizeCardCode(id);\n if(code==='FDS999'){showOwnerDashboard();return}\n let w=workers.find", 1)
+          s=s.replace("workers.find(x=>x.id.toUpperCase()===id.toUpperCase())", "workers.find(x=>x.id.toUpperCase()===code)", 1)
+          s=s.replace("function loginWithCard(id){\n const w=workers.find", "function loginWithCard(id){\n const code=normalizeCardCode(id);\n if(code==='FDS999'){showOwnerDashboard();loginStatus.textContent='Owner card verified ✓';return}\n const w=workers.find", 1)
+          s=s.replace("x.id.toUpperCase()===String(id).toUpperCase()", "x.id.toUpperCase()===code", 1)
+          inject='''<!-- __FDS_OWNER_SYSTEM_V1__ -->\n<section id="owner" class="page">\n<div class="hero"><div class="eyebrow">OWNER CONTROL CENTER</div><h1>Owner<br>Dashboard</h1><p>Owner card <b>FDS999</b> verified. Yahan se store workers aur app controls manage kiye ja sakte hain.</p><div class="scanbox"><button class="btn gold" style="width:100%" onclick="showPage('workers',document.querySelectorAll('nav button')[1])">👥 Manage Workers</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="showPage('ai',document.querySelectorAll('nav button')[2])">📷 Add Worker</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="ownerLogout()">🔒 Logout Owner</button></div></div></section>\n'''
+          s=s.replace('<section id="about"', inject+'<section id="about"', 1)
+          s=s.replace("renderWorkers();restoreLoginState();", "renderWorkers();restoreLoginState();if(localStorage.getItem('fds_owner_logged')) showOwnerDashboard();", 1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit owner system
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add owner card FDS999 and owner dashboard" || exit 0
+          git push
