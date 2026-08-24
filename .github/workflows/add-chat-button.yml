@@ -6,25 +6,29 @@ permissions:
   contents: write
 jobs:
   add-chat:
-    if: !contains(github.event.head_commit.message, 'Auto-add Chat button')
+    if: ${{ !contains(github.event.head_commit.message, 'Auto-add Chat button') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Add Chat button if missing
+      - name: Add Chat button to existing bottom navigation
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
           if 'href="chat.html"' not in s:
-              old='<nav><button data-page="scan" class="active">'
-              new='<nav><a href="chat.html" style="text-decoration:none;color:inherit;display:grid;place-items:center;border:0;background:transparent;border-radius:15px;font-size:10px"><span style="font-size:20px;line-height:24px;display:block">💬</span>Chat</a><button data-page="scan" class="active">'
-              if old not in s:
-                  raise SystemExit('Navigation marker not found; existing design left untouched.')
-              p.write_text(s.replace(old,new,1),encoding='utf-8')
+              s = s.replace('grid-template-columns:repeat(5,1fr)', 'grid-template-columns:repeat(6,1fr)', 1)
+              button = '<a href="chat.html" class="fds-chat-link"><span>💬</span>Chat</a>'
+              marker = '<nav><button data-page="scan" class="active">'
+              if marker not in s:
+                  raise SystemExit('Bottom navigation marker not found; existing site left unchanged.')
+              s = s.replace(marker, '<nav>' + button + '<button data-page="scan" class="active">', 1)
+              s = s.replace('nav button{border:0;', 'nav .fds-chat-link{border:0;background:transparent;color:#777;border-radius:15px;cursor:pointer;font-size:10px;text-decoration:none;display:grid;place-items:center}nav .fds-chat-link span{display:block;font-size:20px;line-height:24px}nav button{border:0;', 1)
+              p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit change
+      - name: Commit index update
         shell: bash
         run: |
           if git diff --quiet; then exit 0; fi
