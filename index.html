@@ -21,6 +21,9 @@
 
 <section id="login" class="page"><div class="section-title"><h2>Worker Login</h2><span class="badge">Card Verified</span></div><div class="hero"><div class="eyebrow">CARD-BASED LOGIN</div><h1>Login With Worker Card</h1><p class="muted">Existing card ka QR scan karo aur registered worker ID match hogi.</p><div class="scanbox"><div id="loginReader" class="reader">Scan My Card dabao</div><div class="actions"><button id="startLogin" class="btn gold">Scan My Card</button><button id="stopLogin" class="btn dark">Stop</button></div><div id="loginStatus" class="status"></div></div></div><div id="loginResult"></div></section>
 
+<!-- __FDS_OWNER_SYSTEM_V1__ -->
+<section id="owner" class="page">
+<div class="hero"><div class="eyebrow">OWNER CONTROL CENTER</div><h1>Owner<br>Dashboard</h1><p>Owner card <b>FDS999</b> verified. Yahan se store workers aur app controls manage kiye ja sakte hain.</p><div class="scanbox"><button class="btn gold" style="width:100%" onclick="showPage('workers',document.querySelectorAll('nav button')[1])">👥 Manage Workers</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="showPage('ai',document.querySelectorAll('nav button')[2])">📷 Add Worker</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="ownerLogout()">🔒 Logout Owner</button></div></div></section>
 <section id="about" class="page"><div class="about"><div class="eyebrow">PREMIUM DIGITAL EXPERIENCE</div><h2>FDS Worker System</h2><p class="muted">Family Dollar Store • Mobile First • QR Verified</p><div class="owner"><b>Shop Owner</b><span>Tufail Khan • Numair Khan</span></div><div class="dev">Created by <strong>Mudassir Ali</strong><br>Full Stack Developer</div></div></section>
 </div>
 
@@ -32,6 +35,7 @@
 const FRONT='file_00000000f2188208af6212884a77409e.png';
 const BACK='file_00000000a4448208bc074a0267bbe186.png';
 const seed=[
+{name:"Mudassir Ali",role:"Owner",id:"FDS999",phone:"03705232727",rack:"1",photo:"",cardImage:"owner_card_front.png",cardBack:"owner_card_back.png",owner:true},
 {name:'Mudassir Ali',role:'Owner',id:'FDS999',phone:'03705232727',rack:'1',cardImage:FRONT,cardBack:BACK,owner:true},
 {name:'Faizan Khan',role:'Store Associate',id:'FDS99902',phone:'+92 340 1569207',rack:'2',cardImage:'',cardBack:''},
 {name:'Awais Shekh',role:'Store Associate',id:'FDS99903',phone:'+92 333 5709644',rack:'4',cardImage:'',cardBack:''}
