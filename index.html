@@ -83,6 +83,9 @@ nav button{border:0;background:none;color:#777;border-radius:17px;font-size:10px
 <div id="loginResult"></div>
 </section>
 
+<!-- __FDS_OWNER_SYSTEM_V1__ -->
+<section id="owner" class="page">
+<div class="hero"><div class="eyebrow">OWNER CONTROL CENTER</div><h1>Owner<br>Dashboard</h1><p>Owner card <b>FDS999</b> verified. Yahan se store workers aur app controls manage kiye ja sakte hain.</p><div class="scanbox"><button class="btn gold" style="width:100%" onclick="showPage('workers',document.querySelectorAll('nav button')[1])">👥 Manage Workers</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="showPage('ai',document.querySelectorAll('nav button')[2])">📷 Add Worker</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="ownerLogout()">🔒 Logout Owner</button></div></div></section>
 <section id="about" class="page">
 <div class="about"><div class="waves"><i></i><i></i><i></i><i></i></div><div class="about-body"><div class="vip">PREMIUM DIGITAL EXPERIENCE</div><h2>FDS Worker System</h2><p>Fast • Elegant • Mobile First • QR Verified</p><div class="owner"><b>Shop Owner</b><span>Tufail Khan &nbsp;•&nbsp; Numair Khan</span></div><div class="dev">Created by <strong>Mudassir Ali</strong><br><small>Full Stack Developer</small></div></div></div>
 </section>
@@ -98,6 +101,7 @@ nav button{border:0;background:none;color:#777;border-radius:17px;font-size:10px
 
 <script>
 const seed=[
+{name:"Mudassir Ali",role:"Owner",id:"FDS999",phone:"03705232727",rack:"1",photo:"",cardImage:"owner_card_front.png",cardBack:"owner_card_back.png",owner:true},
 {name:"Faizan Khan",role:"Store Associate",id:"FDS99902",phone:"+92 340 1569207",rack:"2",photo:"",cardImage:"faizan_card_front.jpg",cardBack:"faizan_card_back.jpg"},
 {name:"Awais Shekh",role:"Store Associate",id:"FDS99903",phone:"+92 333 5709644",rack:"4",photo:"",cardImage:"awais_card_front.jpg",cardBack:"awais_card_back.jpg"}
 ];
@@ -107,9 +111,14 @@ let scanner=null,scanning=false,loginScanner=null,loginScanning=false;
 
 function save(){localStorage.setItem("fds_workers",JSON.stringify(workers));renderWorkers()}
 function showPage(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(id==='workers')renderWorkers()}
-function renderWorkers(){document.getElementById('workerCount').textContent=workers.length+' worker'+(workers.length===1?'':'s');document.getElementById('workerList').innerHTML=workers.map(w=>`<div class="worker"><div><b>${esc(w.name)}</b><small>${esc(w.role)} • ${esc(w.id)}</small></div><span class="pill">VERIFIED</span></div>`).join('')||'<div class="empty">No workers added.</div>'}
+function renderWorkers(){const visibleWorkers=workers.filter(w=>!w.owner);document.getElementById('workerCount').textContent=visibleWorkers.length+' worker'+(visibleWorkers.length===1?'':'s');document.getElementById('workerList').innerHTML=visibleWorkers.map(w=>`<div class="worker"><div><b>${esc(w.name)}</b><small>${esc(w.role)} • ${esc(w.id)}</small></div><span class="pill">VERIFIED</span></div>`).join('')||'<div class="empty">No workers added.</div>'}
+function normalizeCardCode(value){let v=String(value||'').trim();try{if(/^https?:\/\//i.test(v)){v=new URL(v).pathname.split('/').filter(Boolean).pop()||v}}catch(e){}return decodeURIComponent(v).trim().toUpperCase()}
+function showOwnerDashboard(){const w=workers.find(x=>x.owner||x.id.toUpperCase()==='FDS999');if(!w)return;localStorage.setItem('fds_owner_logged','1');document.getElementById('cardResult').innerHTML=`<div class="card"><div class="card-inner"><div class="card-top"><div class="mini-logo">FAMILY DOLLAR STORE</div><div class="pill">OWNER • VERIFIED</div></div><div class="name" style="margin-top:18px">Welcome, ${esc(w.name)}</div><div class="role">FULL OWNER ACCESS</div><div class="id">Owner ID: ${esc(w.id)}</div><div style="color:#777;font-size:11px;margin-top:7px">Phone: ${esc(w.phone)}</div><div style="color:#777;font-size:11px;margin-top:5px">Rack No: ${esc(w.rack)}</div><div style="margin-top:16px;display:grid;gap:9px"><button class="btn gold" onclick="showPage('workers',document.querySelectorAll('nav button')[1])">👥 Manage Workers</button><button class="btn dark" onclick="showPage('ai',document.querySelectorAll('nav button')[2])">📷 Add Worker Card</button><button class="btn dark" onclick="ownerLogout()">🔒 Owner Logout</button></div></div></div>`;toast('Owner verified: '+w.id)}
+function ownerLogout(){localStorage.removeItem('fds_owner_logged');document.getElementById('cardResult').innerHTML='';toast('Owner logged out')}
 function showCard(id){
- let w=workers.find(x=>x.id.toUpperCase()===id.toUpperCase());
+ const code=normalizeCardCode(id);
+ if(code==='FDS999'){showOwnerDashboard();return}
+ let w=workers.find(x=>x.id.toUpperCase()===code);
  if(!w){document.getElementById('cardResult').innerHTML=`<div class="card"><div class="card-inner"><b>Worker Not Found</b><p style="color:#999">ID ${esc(id)} system mein registered nahi hai.</p></div></div>`;return}
  document.getElementById('cardResult').innerHTML=`<div class="card"><div class="card-inner"><div class="card-top"><div class="mini-logo">FAMILY DOLLAR STORE</div><div class="pill">ACTIVE • VERIFIED</div></div><div class="card-main"><div class="photo">${w.photo?`<img src="${esc(w.photo)}">`:"WORKER<br>PHOTO"}</div><div><div class="name">${esc(w.name)}</div><div class="role">${esc(w.role)}</div><div class="id">ID No: ${esc(w.id)}</div>${w.phone?`<div style="color:#777;font-size:11px;margin-top:6px">Phone: ${esc(w.phone)}</div>`:""}${w.rack?`<div style="color:#777;font-size:11px;margin-top:5px">Rack No: ${esc(w.rack)}</div>`:""}</div></div><div class="qrhint">QR VERIFIED DIGITAL ID • Scan ID: ${esc(w.id)}</div>${w.cardImage?`<div style="margin-top:14px;border-top:1px solid #2c2517;padding-top:14px"><div style="font-size:10px;color:#777;margin-bottom:7px">REGISTERED CARD — FRONT</div><img src="${esc(w.cardImage)}" style="width:100%;border-radius:15px;border:1px solid #4b3a18;display:block"></div>`:""}${w.cardBack?`<div style="margin-top:12px"><div style="font-size:10px;color:#777;margin-bottom:7px">REGISTERED CARD — BACK</div><img src="${esc(w.cardBack)}" style="width:100%;border-radius:15px;border:1px solid #4b3a18;display:block"></div>`:""}</div></div>`;
  toast("Worker ID verified: "+w.id);
@@ -142,7 +151,9 @@ async function stopLoginScanner(){
  loginStatus.textContent="Scanner stopped.";
 }
 function loginWithCard(id){
- const w=workers.find(x=>x.id.toUpperCase()===String(id).toUpperCase());
+ const code=normalizeCardCode(id);
+ if(code==='FDS999'){showOwnerDashboard();loginStatus.textContent='Owner card verified ✓';return}
+ const w=workers.find(x=>x.id.toUpperCase()===code);
  if(!w){
    localStorage.removeItem('fds_logged_worker');
    loginResult.innerHTML='<div class="card"><div class="card-inner"><b>Access Denied</b><p style="color:#999">Ye card registered nahi hai.</p></div></div>';
@@ -248,7 +259,7 @@ async function stopScanner(){
 function toast(t){let x=document.getElementById('toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),2400)}
 function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 
-renderWorkers();restoreLoginState();
+renderWorkers();restoreLoginState();if(localStorage.getItem('fds_owner_logged')) showOwnerDashboard();
   function sendChatMessage(){
   const input=document.getElementById("chatInput");
   const messages=document.getElementById("chatMessages");
