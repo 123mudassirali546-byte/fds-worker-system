@@ -1,0 +1,1 @@
+{"name":"NEXA Chatting","short_name":"NEXA","description":"Private, fast and real-time chatting","start_url":"./chat.html","scope":"./","display":"standalone","background_color":"#070707","theme_color":"#ffe08a","orientation":"portrait-primary","icons":[{"src":"./nexa-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
