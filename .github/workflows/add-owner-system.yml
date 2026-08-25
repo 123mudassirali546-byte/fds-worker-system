@@ -1,41 +1,54 @@
-name: Add owner card system
+name: Integrate owner Gmail room
 on:
   push:
     branches: [main]
 permissions:
   contents: write
 jobs:
-  update-owner-system:
+  patch:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch owner system
+      - name: Patch main app with Owner Gmail room
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          marker='__FDS_OWNER_SYSTEM_V1__'
+          marker='__FDS_OWNER_GMAIL_V2__'
           if marker in s:
-              print('Owner system already patched.')
+              print('Owner Gmail room already integrated.')
               raise SystemExit(0)
-          owner='''{name:"Mudassir Ali",role:"Owner",id:"FDS999",phone:"03705232727",rack:"1",photo:"",cardImage:"owner_card_front.png",cardBack:"owner_card_back.png",owner:true},'''
-          s=s.replace('const seed=[', 'const seed=[\n'+owner, 1)
-          s=s.replace("document.getElementById('workerCount').textContent=workers.length+' worker'+(workers.length===1?'':'s');document.getElementById('workerList').innerHTML=workers.map", "const visibleWorkers=workers.filter(w=>!w.owner);document.getElementById('workerCount').textContent=visibleWorkers.length+' worker'+(visibleWorkers.length===1?'':'s');document.getElementById('workerList').innerHTML=visibleWorkers.map", 1)
-          s=s.replace("function showCard(id){\n let w=workers.find", "function normalizeCardCode(value){let v=String(value||'').trim();try{if(/^https?:\\/\\//i.test(v)){v=new URL(v).pathname.split('/').filter(Boolean).pop()||v}}catch(e){}return decodeURIComponent(v).trim().toUpperCase()}\nfunction showOwnerDashboard(){const w=workers.find(x=>x.owner||x.id.toUpperCase()==='FDS999');if(!w)return;localStorage.setItem('fds_owner_logged','1');document.getElementById('cardResult').innerHTML=`<div class=\"card\"><div class=\"card-inner\"><div class=\"card-top\"><div class=\"mini-logo\">FAMILY DOLLAR STORE</div><div class=\"pill\">OWNER • VERIFIED</div></div><div class=\"name\" style=\"margin-top:18px\">Welcome, ${esc(w.name)}</div><div class=\"role\">FULL OWNER ACCESS</div><div class=\"id\">Owner ID: ${esc(w.id)}</div><div style=\"color:#777;font-size:11px;margin-top:7px\">Phone: ${esc(w.phone)}</div><div style=\"color:#777;font-size:11px;margin-top:5px\">Rack No: ${esc(w.rack)}</div><div style=\"margin-top:16px;display:grid;gap:9px\"><button class=\"btn gold\" onclick=\"showPage('workers',document.querySelectorAll('nav button')[1])\">👥 Manage Workers</button><button class=\"btn dark\" onclick=\"showPage('ai',document.querySelectorAll('nav button')[2])\">📷 Add Worker Card</button><button class=\"btn dark\" onclick=\"ownerLogout()\">🔒 Owner Logout</button></div></div></div>`;toast('Owner verified: '+w.id)}\nfunction ownerLogout(){localStorage.removeItem('fds_owner_logged');document.getElementById('cardResult').innerHTML='';toast('Owner logged out')}\nfunction showCard(id){\n const code=normalizeCardCode(id);\n if(code==='FDS999'){showOwnerDashboard();return}\n let w=workers.find", 1)
-          s=s.replace("workers.find(x=>x.id.toUpperCase()===id.toUpperCase())", "workers.find(x=>x.id.toUpperCase()===code)", 1)
-          s=s.replace("function loginWithCard(id){\n const w=workers.find", "function loginWithCard(id){\n const code=normalizeCardCode(id);\n if(code==='FDS999'){showOwnerDashboard();loginStatus.textContent='Owner card verified ✓';return}\n const w=workers.find", 1)
-          s=s.replace("x.id.toUpperCase()===String(id).toUpperCase()", "x.id.toUpperCase()===code", 1)
-          inject='''<!-- __FDS_OWNER_SYSTEM_V1__ -->\n<section id="owner" class="page">\n<div class="hero"><div class="eyebrow">OWNER CONTROL CENTER</div><h1>Owner<br>Dashboard</h1><p>Owner card <b>FDS999</b> verified. Yahan se store workers aur app controls manage kiye ja sakte hain.</p><div class="scanbox"><button class="btn gold" style="width:100%" onclick="showPage('workers',document.querySelectorAll('nav button')[1])">👥 Manage Workers</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="showPage('ai',document.querySelectorAll('nav button')[2])">📷 Add Worker</button><button class="btn dark" style="width:100%;margin-top:9px" onclick="ownerLogout()">🔒 Logout Owner</button></div></div></section>\n'''
-          s=s.replace('<section id="about"', inject+'<section id="about"', 1)
-          s=s.replace("renderWorkers();restoreLoginState();", "renderWorkers();restoreLoginState();if(localStorage.getItem('fds_owner_logged')) showOwnerDashboard();", 1)
+          s=s.replace('</head>','<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n</head>',1)
+          section='''<!-- __FDS_OWNER_GMAIL_V2__ -->
+          <section id="owner" class="page">
+          <div class="hero"><div class="eyebrow">OWNER CONTROL CENTER</div><h1>Owner Room 👑</h1><p class="muted">Authorized owner Gmail se login karke workers/users ki saved chats monitor karo.</p>
+          <div class="scanbox"><input id="ownerEmail" class="input" value="123mudassirali546@gmail.com" placeholder="Owner Gmail" autocomplete="email"><button id="ownerLoginBtn" class="btn gold" style="width:100%;margin-top:9px">Login with Gmail</button><div id="ownerStatus" class="status">Owner email verify required.</div></div></div>
+          <div id="ownerPanel" class="box" style="display:none;margin-top:12px"><div class="section-title"><h2>All Conversations</h2><button id="ownerRefresh" class="btn dark">Refresh</button></div><div id="ownerConversations" class="workers"></div>
+          <div id="ownerConversation" style="display:none;margin-top:12px"><div class="section-title"><h2 id="ownerConversationTitle">Conversation</h2></div><div id="ownerMessages" class="box" style="max-height:55vh;overflow:auto"></div></div></div></section>'''
+          pat=r'<!-- __FDS_OWNER_SYSTEM_V1__ -->\s*<section id="owner" class="page">.*?</section>'
+          s=re.sub(pat,section,s,count=1,flags=re.S)
+          if 'data-page="owner"' not in s:
+              s=s.replace('<button data-page="about"><span>ⓘ</span>About</button>','<button data-page="owner"><span>👑</span>Owner</button><button data-page="about"><span>ⓘ</span>About</button>',1)
+          js='''// __FDS_OWNER_GMAIL_V2__
+          const FDS_SB_URL="https://hldkkxrlvprnufeoyzlf.supabase.co";const FDS_SB_KEY="sb_publishable_7DVCUy_mDYoDzhMZvt-OQg_R9xpWwWQ";const fdsSupabase=window.supabase.createClient(FDS_SB_URL,FDS_SB_KEY);const FDS_OWNER_EMAIL="123mudassirali546@gmail.com";let ownerConversationChannel=null;
+          function ownerSetStatus(t){const e=document.getElementById("ownerStatus");if(e)e.textContent=t}
+          async function ownerLogin(){const email=(document.getElementById("ownerEmail")?.value||"").trim().toLowerCase();if(email!==FDS_OWNER_EMAIL){ownerSetStatus("Owner Gmail incorrect. Use 123mudassirali546@gmail.com");return}const {error}=await fdsSupabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}});ownerSetStatus(error?("Login error: "+error.message):"Gmail par login link bhej diya. Gmail khol kar link tap karo.")}
+          async function ownerCheck(){const {data:{user}}=await fdsSupabase.auth.getUser();if(!user)return;if((user.email||"").toLowerCase()!==FDS_OWNER_EMAIL){ownerSetStatus("Ye Gmail owner nahi hai.");return}const {data}=await fdsSupabase.from("owner_access").select("user_id").eq("user_id",user.id).maybeSingle();if(!data){ownerSetStatus("Owner access not found for this Gmail.");return}document.getElementById("ownerPanel").style.display="block";ownerSetStatus("Owner verified ✓ "+user.email);ownerLoadConversations()}
+          async function ownerLoadConversations(){const box=document.getElementById("ownerConversations");if(!box)return;box.innerHTML="<div class=\"empty\">Loading chats…</div>";const {data,error}=await fdsSupabase.from("messages").select("sender_id,receiver_id,sender_email,receiver_email,sender_name,receiver_name,message,created_at").order("created_at",{ascending:false});if(error){box.innerHTML="<div class=\"empty\">"+esc(error.message)+"</div>";return}const map=new Map();(data||[]).forEach(x=>{const k=[x.sender_id,x.receiver_id].sort().join("|");if(!map.has(k))map.set(k,x)});const rows=[...map.values()];if(!rows.length){box.innerHTML="<div class=\"empty\">No messages yet.</div>";return}box.innerHTML=rows.map((x,i)=>{const a=x.sender_name||x.sender_email||x.sender_id,b=x.receiver_name||x.receiver_email||x.receiver_id;return `<button class=\"worker\" data-i=\"${i}\"><div><b>${esc(a)} ↔ ${esc(b)}</b><small>${esc(x.message||"")}</small></div><span class=\"pill\">OPEN</span></button>`}).join("");box.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{const x=rows[+b.dataset.i];ownerOpenConversation(x.sender_id,x.receiver_id,(x.sender_name||x.sender_email||x.sender_id)+" ↔ "+(x.receiver_name||x.receiver_email||x.receiver_id))})}
+          async function ownerOpenConversation(a,b,title){document.getElementById("ownerConversation").style.display="block";document.getElementById("ownerConversationTitle").textContent=title;const box=document.getElementById("ownerMessages");const {data,error}=await fdsSupabase.from("messages").select("*").or(`and(sender_id.eq.${a},receiver_id.eq.${b}),and(sender_id.eq.${b},receiver_id.eq.${a})`).order("created_at",{ascending:true});if(error){box.innerHTML="<div class=\"empty\">"+esc(error.message)+"</div>";return}ownerRenderMessages(data||[],false);if(ownerConversationChannel)await fdsSupabase.removeChannel(ownerConversationChannel);ownerConversationChannel=fdsSupabase.channel("owner-live-"+[a,b].sort().join("-")).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},p=>{const x=p.new;if((x.sender_id===a&&x.receiver_id===b)||(x.sender_id===b&&x.receiver_id===a))ownerRenderMessages([x],true)}).subscribe()}
+          function ownerRenderMessages(rows,append){const box=document.getElementById("ownerMessages");if(!append)box.innerHTML="";rows.forEach(x=>{const d=document.createElement("div");d.className="worker";d.style.display="block";d.style.marginBottom="7px";d.innerHTML="<b>"+esc(x.sender_name||x.sender_email||x.sender_id)+"</b><div style=\"margin-top:5px\">"+esc(x.message)+"</div><small>"+new Date(x.created_at).toLocaleString()+"</small>";box.appendChild(d)});box.scrollTop=box.scrollHeight}
+          document.getElementById("ownerLoginBtn")?.addEventListener("click",ownerLogin);document.getElementById("ownerRefresh")?.addEventListener("click",ownerLoadConversations);fdsSupabase.auth.onAuthStateChange(()=>setTimeout(ownerCheck,0));ownerCheck();
+          '''
+          s=s.replace('</script>',js+'\n</script>',1)
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit owner system
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Add owner card FDS999 and owner dashboard" || exit 0
+          git commit -m "Integrate owner Gmail room into main app" || exit 0
           git push
