@@ -32,6 +32,7 @@ jobs:
           s=re.sub(pat,section,s,count=1,flags=re.S)
           if 'data-page="owner"' not in s:
               s=s.replace('<button data-page="about"><span>ⓘ</span>About</button>','<button data-page="owner"><span>👑</span>Owner</button><button data-page="about"><span>ⓘ</span>About</button>',1)
+          s=s.replace('grid-template-columns:repeat(6,1fr)', 'grid-template-columns:repeat(7,1fr)', 1)
           js='''// __FDS_OWNER_GMAIL_V2__
           const FDS_SB_URL="https://hldkkxrlvprnufeoyzlf.supabase.co";const FDS_SB_KEY="sb_publishable_7DVCUy_mDYoDzhMZvt-OQg_R9xpWwWQ";const fdsSupabase=window.supabase.createClient(FDS_SB_URL,FDS_SB_KEY);const FDS_OWNER_EMAIL="123mudassirali546@gmail.com";let ownerConversationChannel=null;
           function ownerSetStatus(t){const e=document.getElementById("ownerStatus");if(e)e.textContent=t}
