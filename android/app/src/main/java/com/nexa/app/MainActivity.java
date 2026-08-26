@@ -32,16 +32,17 @@ public class MainActivity extends Activity {
         web.setWebChromeClient(new WebChromeClient() {
             @Override public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
-                    if (android.os.Build.VERSION.SDK_INT >= 23 &&
-                        ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
-                    }
                     request.grant(request.getResources());
                 });
             }
         });
-        if (android.os.Build.VERSION.SDK_INT >= 33) ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 100);
-        if (android.os.Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            String[] permissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
+            ActivityCompat.requestPermissions(this, permissions, 101);
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 100);
+        }
         web.loadUrl(START_URL);
     }
 
