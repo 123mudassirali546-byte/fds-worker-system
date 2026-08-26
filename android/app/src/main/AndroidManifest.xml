@@ -11,5 +11,5 @@
             </intent-filter>
         </activity>
     </application>
-    <!-- NEXA VIP interface build trigger -->
+    <!-- NEXA VIP interface + realtime chat feature build -->
 </manifest>
