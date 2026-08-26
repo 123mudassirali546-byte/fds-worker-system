@@ -2,29 +2,50 @@ package com.nexa.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.core.app.ActivityCompat;
-import androidx.webkit.WebSettingsCompat;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends Activity {
     private static final String START_URL = "https://123mudassirali546-byte.github.io/fds-worker-system/nexa-direct-login.html";
+    private WebView web;
+
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        WebView web = new WebView(this);
+        web = new WebView(this);
         setContentView(web);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         web.setWebViewClient(new WebViewClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public void onPermissionRequest(final PermissionRequest request) {
+                runOnUiThread(() -> {
+                    if (android.os.Build.VERSION.SDK_INT >= 23 &&
+                        ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
+                    }
+                    request.grant(request.getResources());
+                });
+            }
+        });
         if (android.os.Build.VERSION.SDK_INT >= 33) ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 100);
+        if (android.os.Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
         web.loadUrl(START_URL);
     }
-    @Override public void onBackPressed() { WebView w=(WebView)findViewById(android.R.id.content); super.onBackPressed(); }
+
+    @Override public void onBackPressed() {
+        if (web != null && web.canGoBack()) web.goBack(); else super.onBackPressed();
+    }
 }
