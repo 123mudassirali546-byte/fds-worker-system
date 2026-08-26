@@ -11,4 +11,5 @@
             </intent-filter>
         </activity>
     </application>
+    <!-- NEXA VIP interface build trigger -->
 </manifest>
