@@ -10,10 +10,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 public class MainActivity extends Activity {
-    private static final String START_URL = "https://123mudassirali546-byte.github.io/fds-worker-system/nexa-direct-login.html";
+    private static final String START_URL = "https://123mudassirali546-byte.github.io/fds-worker-system/nexa-vip.html";
     private WebView web;
 
     @Override public void onCreate(Bundle state) {
@@ -31,14 +30,11 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient());
         web.setWebChromeClient(new WebChromeClient() {
             @Override public void onPermissionRequest(final PermissionRequest request) {
-                runOnUiThread(() -> {
-                    request.grant(request.getResources());
-                });
+                runOnUiThread(() -> request.grant(request.getResources()));
             }
         });
         if (android.os.Build.VERSION.SDK_INT >= 23) {
-            String[] permissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
-            ActivityCompat.requestPermissions(this, permissions, 101);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA}, 101);
         }
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 100);
