@@ -17,7 +17,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build debug APK
+      - name: Build Debug APK
         working-directory: android
         run: gradle assembleDebug --no-daemon --stacktrace
       - name: Verify APK
@@ -29,4 +29,4 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-# NEXA build: confirmed launcher icon + neon-blue VIP interface.
+# NEXA: confirmed neon-blue VIP UI and confirmed launcher icon.
