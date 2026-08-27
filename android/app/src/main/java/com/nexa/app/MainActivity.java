@@ -2,7 +2,6 @@ package com.nexa.app;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
@@ -46,3 +45,5 @@ public class MainActivity extends Activity {
         if (web != null && web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
 }
+
+// NEXA: confirmed VIP interface build.
