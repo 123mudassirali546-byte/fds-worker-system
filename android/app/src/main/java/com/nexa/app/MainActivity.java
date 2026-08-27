@@ -12,6 +12,7 @@ import androidx.core.app.ActivityCompat;
 
 public class MainActivity extends Activity {
     private static final String START_URL = "https://123mudassirali546-byte.github.io/fds-worker-system/nexa-vip.html";
+    private static final String THEME_URL = "https://raw.githubusercontent.com/123mudassirali546-byte/fds-worker-system/main/nexa-premium.css";
     private WebView web;
 
     @Override public void onCreate(Bundle state) {
@@ -38,6 +39,11 @@ public class MainActivity extends Activity {
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 100);
         }
+        web.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                view.evaluateJavascript("(function(){if(!document.getElementById('nexaPremiumTheme')){var l=document.createElement('link');l.id='nexaPremiumTheme';l.rel='stylesheet';l.href='" + THEME_URL + "';document.head.appendChild(l);}})();", null);
+            }
+        });
         web.loadUrl(START_URL);
     }
 
@@ -45,5 +51,3 @@ public class MainActivity extends Activity {
         if (web != null && web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
 }
-
-// NEXA: confirmed VIP interface build.
