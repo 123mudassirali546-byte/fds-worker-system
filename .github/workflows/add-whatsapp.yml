@@ -18,28 +18,26 @@ jobs:
           p=Path('nexa-final-v2.html')
           s=p.read_text(encoding='utf-8')
           original=s
-          if 'id="whatsappMode"' not in s:
-              old='<button id="back" class="sm">←</button><div id="chatAvatar"></div><main><b id="chatName">Chat</b><small id="chatId"></small></main><button id="audioCall" class="sm">☎</button>'
-              new='<button id="back" class="sm">←</button><div id="chatAvatar"></div><main><b id="chatName">Chat</b><small id="chatId"></small></main><button id="whatsappMode" class="sm" title="Send via WhatsApp">WA</button><button id="audioCall" class="sm">☎</button>'
-              if old not in s: raise SystemExit('Chat header anchor not found')
+          # Chat header: add a dedicated per-chat WhatsApp number button.
+          if 'id="whatsappNumber"' not in s:
+              old='<button id="whatsappMode" class="sm" title="Send via WhatsApp">WA</button>'
+              new='<button id="whatsappNumber" class="sm" title="Set WhatsApp number">☎</button>'+old
+              if old not in s: raise SystemExit('WhatsApp mode button not found')
               s=s.replace(old,new,1)
-          if '.wa-active' not in s:
-              anchor='.nav.active{color:#45b7ff}'
-              if anchor not in s: raise SystemExit('CSS anchor not found')
-              s=s.replace(anchor,anchor+'.wa-active{background:#183b28!important;color:#7dffae!important;border-color:#2ea85d!important}',1)
-          if "window.nexaSendMode='nexa'" not in s:
-              anchor="$('find').onclick=findUser;$('search').onkeydown=e=>{if(e.key==='Enter')findUser()};"
-              code="window.nexaSendMode='nexa';$('whatsappMode').onclick=()=>{window.nexaSendMode=window.nexaSendMode==='whatsapp'?'nexa':'whatsapp';$('whatsappMode').classList.toggle('wa-active',window.nexaSendMode==='whatsapp');$('whatsappMode').textContent=window.nexaSendMode==='whatsapp'?'WA ✓':'WA';$('text').placeholder=window.nexaSendMode==='whatsapp'?'WhatsApp message…':'Message…';toast(window.nexaSendMode==='whatsapp'?'WhatsApp mode ON':'Nexa mode ON',window.nexaSendMode==='whatsapp'?(peer?.whatsapp_phone?'WhatsApp linked':'Is user ka WhatsApp number linked nahi hai.'):'Nexa ID par message jayega')};"
-              if anchor not in s: raise SystemExit('JS anchor not found')
-              s=s.replace(anchor,anchor+code,1)
-          if "if(window.nexaSendMode==='whatsapp')" not in s:
-              anchor="async function send(){const t=$('text').value.trim();if(!t||!peer)return;"
-              code="if(window.nexaSendMode==='whatsapp'){const phone=peer.whatsapp_phone||'';if(!phone)return toast('WhatsApp unavailable','Is NEXA user ka WhatsApp number linked nahi hai.');const {data:{session}}=await db.auth.getSession();if(!session)return toast('Session expired','Dobara login karo.');$('send').disabled=true;try{const rr=await fetch('https://hldkkxrlvprnufeoyzlf.supabase.co/functions/v1/send-whatsapp',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({to:phone,message:t})});const wd=await rr.json().catch(()=>({}));if(!rr.ok)return toast('WhatsApp send failed',wd.error?.message||'Check WhatsApp setup');$('text').value='';toast('WhatsApp sent','Message WhatsApp par bhej diya gaya.')}catch(e){toast('WhatsApp send failed',e.message||'Network error')}finally{$('send').disabled=false}return}"
-              if anchor not in s: raise SystemExit('send anchor not found')
-              s=s.replace(anchor,anchor+code,1)
-          s=s.replace('select(\'id,display_name,chat_id,email,avatar_url,role\')','select(\'id,display_name,chat_id,email,avatar_url,role,whatsapp_phone\')')
-          s=s.replace('function openChat(p){','async function openChat(p){',1)
-          if s != original: p.write_text(s,encoding='utf-8')
+          # Ensure peer queries include whatsapp_phone.
+          s=s.replace("select('id,display_name,chat_id,email,avatar_url,role')","select('id,display_name,chat_id,email,avatar_url,role,whatsapp_phone')")
+          # Add a robust number setter once after the WA mode handler.
+          if "window.setWhatsAppNumber" not in s:
+              anchor="window.nexaSendMode='nexa';$('whatsappMode').onclick="
+              start=s.find(anchor)
+              if start<0: raise SystemExit('WA mode handler not found')
+              # Find the end of the handler statement (the toast(...) ends with a };).
+              end=s.find("};",start)
+              if end<0: raise SystemExit('WA mode handler end not found')
+              end+=2
+              code="window.setWhatsAppNumber=async()=>{if(!peer)return;const current=peer.whatsapp_phone||'';const value=prompt('Is user ka WhatsApp number likho (country code ke sath, example 923001234567):',current);if(value===null)return;const phone=value.replace(/\\D/g,'');if(!/^\\d{10,15}$/.test(phone))return toast('Invalid number','Country code ke sath number likho, example 923001234567');const {error}=await db.from('profiles').update({whatsapp_phone:phone}).eq('id',peer.id);if(error)return toast('Save failed',error.message);peer.whatsapp_phone=phone;toast('WhatsApp number saved','Ab WA mode mein isi number par message bhej sakte ho.')};$('whatsappNumber').onclick=window.setWhatsAppNumber;"
+              s=s[:end]+code+s[end:]
+          p.write_text(s,encoding='utf-8')
           print('changed=',s != original)
           PY
       - name: Commit patch
@@ -48,5 +46,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add nexa-final-v2.html .github/workflows/add-whatsapp.yml
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix NEXA WhatsApp routing and peer phone lookup'
+          git commit -m 'Add per-chat WhatsApp number entry'
           git push
