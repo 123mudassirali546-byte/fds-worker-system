@@ -1,4 +1,4 @@
-name: Add NEXA WhatsApp feature
+name: Fix NEXA JavaScript
 on:
   push:
     paths:
@@ -7,55 +7,25 @@ on:
 permissions:
   contents: write
 jobs:
-  patch:
+  fix:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch NEXA WhatsApp and login
+      - name: Repair JavaScript syntax
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('nexa-final-v2.html')
           s=p.read_text(encoding='utf-8')
-          original=s
-          # Fix the JavaScript syntax error that prevented Sign in from working.
+          s=s.replace('async window.nexaSendMode=\'nexa\';','window.nexaSendMode=\'nexa\';')
           s=s.replace('async async function send(){','async function send(){')
-          s=s.replace('function send(){const t=', 'async function send(){const t=', 1)
-          # Add per-chat WhatsApp controls without changing the existing design.
-          if 'id="whatsappNumber"' not in s:
-              anchor='<button id="audioCall" class="sm">☎</button>'
-              repl='<button id="whatsappNumber" class="sm" title="Set WhatsApp number">WA#</button><button id="whatsappMode" class="sm" title="Send via WhatsApp">WA</button><button id="audioCall" class="sm">☎</button>'
-              if anchor not in s: raise SystemExit('chat action anchor missing')
-              s=s.replace(anchor,repl,1)
-          # Add WhatsApp helpers before openChat.
-          if 'function getWaPhone()' not in s:
-              anchor='async function openChat(p){'
-              code="""window.nexaSendMode='nexa';
-          function waKey(){return peer?'nexa_wa_'+peer.id:null}
-          function getWaPhone(){return waKey()?localStorage.getItem(waKey())||'':''}
-          async function setWhatsAppNumber(){if(!peer)return;const value=prompt('WhatsApp number country code ke sath likho (example 923001234567):',getWaPhone());if(value===null)return;const phone=value.replace(/\\D/g,'');if(!/^\\d{10,15}$/.test(phone))return toast('Invalid number','Example: 923001234567');localStorage.setItem(waKey(),phone);toast('WhatsApp number saved','Ab WA mode mein is number par message kar sakte ho.')}
-          """
-              if anchor not in s: raise SystemExit('openChat anchor missing')
-              s=s.replace(anchor,code+anchor,1)
-          # Insert WhatsApp branch in send.
-          if "if(window.nexaSendMode==='whatsapp')" not in s:
-              anchor='async function send(){const t=$(\'text\').value.trim();if(!t||!peer)return;'
-              branch="""if(window.nexaSendMode==='whatsapp'){const phone=getWaPhone();if(!phone)return toast('WhatsApp number missing','WA# dabao aur number save karo.');const {data:{session}}=await db.auth.getSession();if(!session)return toast('Session expired','Dobara login karo.');$('send').disabled=true;try{const rr=await fetch('https://hldkkxrlvprnufeoyzlf.supabase.co/functions/v1/send-whatsapp',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({to:phone,message:t})});const wd=await rr.json().catch(()=>({}));if(!rr.ok)throw new Error(wd.error?.message||'WhatsApp API failed');$('text').value='';toast('WhatsApp sent','Message WhatsApp par bhej diya gaya.')}catch(e){toast('WhatsApp failed',e.message)}finally{$('send').disabled=false}return}"""
-              if anchor not in s: raise SystemExit('send anchor missing')
-              s=s.replace(anchor,anchor+branch,1)
-          # Bind controls at end of script, after DOM exists.
-          if "$('whatsappNumber').onclick=setWhatsAppNumber" not in s:
-              pos=s.rfind('</script>')
-              bind="$('whatsappNumber').onclick=setWhatsAppNumber;$('whatsappMode').onclick=()=>{window.nexaSendMode=window.nexaSendMode==='whatsapp'?'nexa':'whatsapp';$('whatsappMode').classList.toggle('wa-active',window.nexaSendMode==='whatsapp');$('whatsappMode').textContent=window.nexaSendMode==='whatsapp'?'WA ✓':'WA';$('text').placeholder=window.nexaSendMode==='whatsapp'?'WhatsApp message…':'Message…';toast(window.nexaSendMode==='whatsapp'?'WhatsApp mode ON':'Nexa mode ON',window.nexaSendMode==='whatsapp'?(getWaPhone()?'Number linked':'Pehle WA# se number save karo'):'Nexa ID par message jayega')};"
-              s=s[:pos]+bind+s[pos:]
           p.write_text(s,encoding='utf-8')
-          print('changed=',s != original)
           PY
-      - name: Commit patch
+      - name: Commit fix
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add nexa-final-v2.html .github/workflows/add-whatsapp.yml
+          git add nexa-final-v2.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix NEXA login and enable per-chat WhatsApp messaging'
+          git commit -m 'Fix NEXA login JavaScript syntax'
           git push
